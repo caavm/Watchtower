@@ -3,6 +3,9 @@ package com.example.caavm.watchtower;
 import android.app.Application;
 import android.util.Log;
 import com.android.volley.*;
+import com.android.volley.toolbox.BasicNetwork;
+import com.android.volley.toolbox.DiskBasedCache;
+import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.Volley;
 /**
  * Created by CAAVM on 03/06/2016.
@@ -21,19 +24,29 @@ public class Watchtower extends Application {
     public void onCreate(){
         super.onCreate();
         instance=this;
-        requestQueue = Volley.newRequestQueue(getApplicationContext());
+        // Instantiate the cache
+        Cache cache = new DiskBasedCache(getCacheDir(), 1024 * 1024); // 1MB cap
+
+// Set up the network to use HttpURLConnection as the HTTP client.
+        Network network = new BasicNetwork(new HurlStack());
+
+// Instantiate the RequestQueue with the cache and network.
+        requestQueue = new RequestQueue(cache, network);
+
+// Start the queue
+        requestQueue.start();
         Log.d("volley", "inicio");
     }
 
     public RequestQueue getRequestQueue() {
+        Log.d("volley", "requestQueue");
         return requestQueue;
     }
 
-    public <T> void add(Request<T> request){
+    public <String> void add(Request<String> request){
         request.setTag(TAG);
         request.setRetryPolicy(new DefaultRetryPolicy(TIME_OUT, NUM_RETRY, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
-        getRequestQueue().add(request);
-        Log.d("volley", "envio");
+        requestQueue.add(request);
     }
 
     public void cancel(){
